@@ -47,4 +47,39 @@ public class UserRepository {
     }
     throw new SQLException("Creation failed");
   }
+
+  // UPDATE
+
+  public Optional<User> update(int id, String name, String email) throws SQLException {
+    String sql = "UPDATE users SET name = ?, email = ? WHERE id = ?";
+    try (PreparedStatement ps = Database.get().prepareStatement(sql)) {
+      ps.setString(1, name);
+      ps.setString(2, email);
+      ps.setInt(3, id);
+      int affected = ps.executeUpdate();
+      if (affected == 0)
+        return Optional.empty();
+    }
+    return findbyId(id);
+  }
+
+  // DELETE
+
+  public boolean delete(int id) throws SQLException {
+    String sql = "DELETE FROM users WHERE id = ?";
+    try (PreparedStatement ps = Database.get().prepareStatement(sql)) {
+      ps.setInt(1, id);
+      return ps.executeUpdate() > 0;
+    }
+  }
+
+  // MAPPING
+
+  private User map(ResultSet rs) throws SQLException {
+    return new User(
+        rs.getInt("id"),
+        rs.getString("name"),
+        rs.getString("email"),
+        rs.getString("created_at"));
+  }
 }
