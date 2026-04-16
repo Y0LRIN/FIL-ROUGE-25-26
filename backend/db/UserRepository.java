@@ -24,6 +24,27 @@ public class UserRepository {
 
   public Optional<User> findbyId(int id) throws SQLException {
     String sql = "SELECT id, name, email, created_at FROM users WHERE id = ?";
-    try (PreparedStatement ps = Database.get())
+    try (PreparedStatement ps = Database.get().prepareStatement(sql)) {
+      ps.setInt(1, id);
+      try (ResultSet rs = ps.executeQuery()) {
+        return rs.next() ? Optional.of(map(rs)) : Optional.empty();
+      }
+    }
+  }
+
+  // CREATE
+
+  public User create(String name, String email) throws SQLException {
+    String sql = "INSERT INTO users (name, email) VALUES (?, ?)";
+    try (PreparedStatement ps = Database.get().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+      ps.setString(1, name);
+      ps.setString(2, email);
+      ps.executeUpdate();
+      try (ResultSet keys = ps.getGeneratedKeys()) {
+        if (keys.next())
+          return findbyId(keys.getInt(1)).orElseThrow();
+      }
+    }
+    throw new SQLException("Creation failed");
   }
 }
