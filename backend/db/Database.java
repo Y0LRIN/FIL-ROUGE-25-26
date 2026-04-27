@@ -5,12 +5,15 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+// Class to connect and initialise the database
 public class Database {
 
+  // URL for the database
   private static final String URL = "";
 
   private static Connection connection;
 
+  // Connection
   public static void init() throws SQLException {
     connection = DriverManager.getConnection(URL);
     System.out.println("Database connexion established : " + URL);
@@ -21,6 +24,7 @@ public class Database {
     return connection;
   }
 
+  // Create tables if they don't exist
   private static void createSchema() throws SQLException {
     try (Statement st = connection.createStatement()) {
       st.executeUpdate("""
