@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+    <!-- Dossier source racine -->
+    <classpathentry kind="src" path=""/>
+
+    <!-- JDK système -->
+    <classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+
+    <!-- JARs externes (SQLite JDBC + autres) -->
+    <classpathentry kind="lib" path="libs/sqlite-jdbc.jar"/>
+
+    <!-- Dossier de sortie des .class compilés -->
+    <classpathentry kind="output" path="out"/>
+</classpath>

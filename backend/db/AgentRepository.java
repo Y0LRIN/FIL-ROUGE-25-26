@@ -81,4 +81,16 @@ public class AgentRepository {
       return ps.executeUpdate() > 0;
     }
   }
+
+  // MAPPING
+
+  public Agent map(ResultSet rs) throws SQLException {
+    return new Agent(
+        rs.getInt("id"),
+        rs.getString("name"),
+        rs.getString("email"),
+        rs.getString("phone"),
+        rs.getInt("is_admin") == 1,
+        rs.getString("created_at"));
+  }
 }
