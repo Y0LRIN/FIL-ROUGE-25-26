@@ -16,7 +16,7 @@ public class ClientRepository {
     try (Statement st = Database.get().createStatement();
         ResultSet rs = st.executeQuery(sql)) {
       while (rs.next()) {
-        agents.add(map(rs));
+        clients.add(map(rs));
       }
     }
     return clients;
@@ -25,7 +25,7 @@ public class ClientRepository {
   public Optional<Client> findbyId(int id) throws SQLException {
     String sql = "SELECT * FROM clients WHERE id = ?";
     try (PreparedStatement ps = Database.get().prepareStatement(sql)) {
-      ps.setInt(1, int);
+      ps.setInt(1, id);
       try (ResultSet rs = ps.executeQuery()) {
         return rs.next() ? Optional.of(map(rs)) : Optional.empty();
       }
