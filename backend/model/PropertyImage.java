@@ -1,6 +1,6 @@
 package model;
 
-public class Property_Image {
+public class PropertyImage {
 
   public int id;
   public int property_id;
@@ -8,10 +8,10 @@ public class Property_Image {
   public boolean is_main;
   public String created_at;
 
-  public Property_Image() {
+  public PropertyImage() {
   }
 
-  public Property_Image(int id, int property_id, String image_url, boolean is_main, String created_at) {
+  public PropertyImage(int id, int property_id, String image_url, boolean is_main, String created_at) {
     this.id = id;
     this.property_id = property_id;
     this.image_url = image_url;
