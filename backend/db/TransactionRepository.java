@@ -18,7 +18,7 @@ public class TransactionRepository {
     try (Statement st = Database.get().createStatement();
         ResultSet rs = st.executeQuery(sql)) {
       while (rs.next()) {
-        users.add(map(rs));
+        transactions.add(map(rs));
       }
     }
     return transactions;
@@ -54,6 +54,69 @@ public class TransactionRepository {
       ps.setInt(2, amount);
       ps.setString(3, payment_date);
       ps.setString(4, payment_method);
+      ps.setString(5, status.name());
+      ps.executeQuery();
+      try (ResultSet keys = ps.getGeneratedKeys()) {
+        if (keys.next()) {
+          return findbyId(keys.getInt(1)).orElseThrow();
+        }
+      }
     }
+    throw new SQLException("Creation failed");
+  }
+
+  // UPDATE
+
+  public Optional<Transaction> update(
+      int id,
+      int contract_id,
+      int amount,
+      String payment_date,
+      String payment_method,
+      TransactionStatus status) throws SQLException {
+    String sql = """
+          UPDATE transactions SET
+            contract_id = ?,
+            amount = ?,
+            payment_date = ?,
+            payment_method = ?,
+            status = ?
+        WHERE id = ?
+        """;
+    try (PreparedStatement ps = Database.get().prepareStatement(sql)) {
+      ps.setInt(1, contract_id);
+      ps.setInt(2, amount);
+      ps.setString(3, payment_date);
+      ps.setString(4, payment_method);
+      ps.setString(5, status.name());
+      ps.setInt(6, id);
+      int affected = ps.executeUpdate();
+      if (affected == 0) {
+        return Optional.empty();
+      }
+      return findbyId(id);
+    }
+  }
+
+  // DELETE
+
+  public boolean delete(int id) throws SQLException {
+    String sql = "DELETE FROM contracts WHERE id = ?";
+    try (PreparedStatement ps = Database.get().prepareStatement(sql)) {
+      ps.setInt(1, id);
+      return ps.executeUpdate() > 0;
+    }
+  }
+
+  // MAPPING
+
+  public Transaction map(ResultSet rs) throws SQLException {
+    return new Transaction(
+        rs.getInt("id"),
+        rs.getInt("contract_id"),
+        rs.getInt("amount"),
+        rs.getString("payment_date"),
+        rs.getString("payment_method"),
+        TransactionStatus.valueOf(rs.getString("status")));
   }
 }
