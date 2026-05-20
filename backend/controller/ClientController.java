@@ -1,8 +1,6 @@
 package controller;
 
 import db.ClientRepository;
-import model.Address;
-import model.Agent;
 import model.Client;
 import model.enums.ClientType;
 import util.HttpUtils;
