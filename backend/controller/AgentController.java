@@ -1,12 +1,10 @@
 package controller;
 
 import db.AgentRepository;
-import model.Address;
 import model.Agent;
 import util.HttpUtils;
 import util.Json;
 import com.sun.net.httpserver.HttpExchange;
-import com.sun.org.apache.bcel.internal.classfile.Unknown;
 
 import java.io.IOException;
 import java.util.LinkedHashMap;
@@ -80,6 +78,46 @@ public class AgentController {
     }
 
     Map<String, String> body = Json.parse(HttpUtils.readBody(ex));
+    String name = body.get("name");
+    String email = body.get("email");
+    String phone = body.get("phone");
+    String is_adminStr = body.get("is_admin");
+    String created_at = body.get("created_at");
 
+    if (name == null || email == null || phone == null || is_adminStr == null || created_at == null) {
+      HttpUtils.sendJson(ex, 400, "All fields required(name/email/phone/is_admin/created_at)");
+      return;
+    }
+
+    boolean is_admin = Boolean.parseBoolean(is_adminStr);
+    Optional<Agent> updated = repo.update(id, name, email, phone, is_admin, created_at);
+    if (updated.isEmpty()) {
+      HttpUtils.sendJson(ex, 404, Json.error("Agent Unknown"));
+      return;
+    }
+    HttpUtils.sendJson(ex, 200, Json.toJson(toMap(updated.get())));
+  }
+
+  private void delete(HttpExchange ex, int id) throws Exception {
+    if (id <= 0) {
+      HttpUtils.sendJson(ex, 400, Json.error("Invalid ID"));
+      return;
+    }
+    if (!repo.delete(id)) {
+      HttpUtils.sendJson(ex, 404, "Agent not found");
+      return;
+    }
+    HttpUtils.sendNoContent(ex);
+  }
+
+  private Map<String, Object> toMap(Agent a) {
+    Map<String, Object> m = new LinkedHashMap<>();
+    m.put("id", a.id);
+    m.put("name", a.name);
+    m.put("email", a.email);
+    m.put("phone", a.phone);
+    m.put("is_admin", a.is_admin);
+    m.put("created_at", a.created_at);
+    return m;
   }
 }
