@@ -89,7 +89,7 @@ public class AddressController {
     int postal_code = Integer.parseInt(postal_codeStr);
     Optional<Address> updated = repo.update(id, street, city, postal_code, country);
     if (updated.isEmpty()) {
-      HttpUtils.sendJson(ex, 404, Json.error("User Unknown"));
+      HttpUtils.sendJson(ex, 404, Json.error("Address Unknown"));
       return;
     }
     HttpUtils.sendJson(ex, 200, Json.toJson(toMap(updated.get())));
