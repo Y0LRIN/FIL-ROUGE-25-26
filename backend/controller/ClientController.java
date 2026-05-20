@@ -26,14 +26,13 @@ public class ClientController {
         case "GET" -> {
           if (id > 0) {
             getOne(ex, id);
-          }
-          else {
+          } else {
             getAll(ex);
           }
         }
         case "POST" -> create(ex);
-        case "PUT" -> update(ex);
-        case "DELETE" -> delete(ex)
+        case "PUT" -> update(ex, id);
+        case "DELETE" -> delete(ex, id);
         default -> HttpUtils.sendJson(ex, 405, Json.error("Unauthorized method"));
       }
     } catch (Exception e) {
@@ -50,12 +49,12 @@ public class ClientController {
   }
 
   private void getOne(HttpExchange ex, int id) throws Exception {
-    Optional<Agent> agent = repo.findbyId(id);
-    if (agent.isEmpty()) {
+    Optional<Client> client = repo.findbyId(id);
+    if (client.isEmpty()) {
       HttpUtils.sendJson(ex, 404, "Unknown address");
       return;
     }
-    HttpUtils.sendJson(ex, 200, Json.toJson(toMap(agent.get)));
+    HttpUtils.sendJson(ex, 200, Json.toJson(toMap(client.get())));
   }
 
   private void create(HttpExchange ex) throws Exception {
@@ -70,7 +69,7 @@ public class ClientController {
       return;
     }
     ClientType type = ClientType.valueOf(typeStr);
-    Agent created = repo.create(first_name, last_name, email, phone, type);
+    Client created = repo.create(first_name, last_name, email, phone, type);
     HttpUtils.sendJson(ex, 201, Json.toJson(toMap(created)));
   }
 
