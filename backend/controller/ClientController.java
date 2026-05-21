@@ -49,7 +49,7 @@ public class ClientController {
   private void getOne(HttpExchange ex, int id) throws Exception {
     Optional<Client> client = repo.findbyId(id);
     if (client.isEmpty()) {
-      HttpUtils.sendJson(ex, 404, "Unknown address");
+      HttpUtils.sendJson(ex, 404, "Unknown Client");
       return;
     }
     HttpUtils.sendJson(ex, 200, Json.toJson(toMap(client.get())));
