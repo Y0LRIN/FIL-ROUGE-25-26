@@ -90,7 +90,7 @@ public class ClientController {
     ClientType type = ClientType.valueOf(typeStr);
     Optional<Client> updated = repo.update(id, first_name, last_name, email, phone, type);
     if (updated.isEmpty()) {
-      HttpUtils.sendJson(ex, 404, Json.error("Address Unknown"));
+      HttpUtils.sendJson(ex, 404, Json.error("Client Unknown"));
       return;
     }
     HttpUtils.sendJson(ex, 200, Json.toJson(toMap(updated.get())));
