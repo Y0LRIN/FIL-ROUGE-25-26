@@ -25,7 +25,7 @@ public class PropertyImageRepository {
 
   public Optional<PropertyImage> findbyId(int id) throws SQLException {
     String sql = "SELECT * FROM property_Images WHERE id = ?";
-    try (PreparedStatement ps = Database.get().prepareStatement(arg0)) {
+    try (PreparedStatement ps = Database.get().prepareStatement(sql)) {
       ps.setInt(1, id);
       try (ResultSet rs = ps.executeQuery()) {
         return rs.next() ? Optional.of(map(rs)) : Optional.empty();
@@ -35,9 +35,10 @@ public class PropertyImageRepository {
 
   // CREATE
 
-  public PropertyImage create(int property_id, String image_url, boolean is_main, String created_at) throws SQLException {
+  public PropertyImage create(int property_id, String image_url, boolean is_main, String created_at)
+      throws SQLException {
     String sql = "INSERT INTO property_Images (property_id, image_url, is_main, created_at) VALUES (?, ?, ?, ?)";
-    try (PreparedStatement ps = Database.get().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)); {
+    try (PreparedStatement ps = Database.get().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
       ps.setInt(1, property_id);
       ps.setString(2, image_url);
       ps.setInt(3, is_main ? 1 : 0);
@@ -50,5 +51,45 @@ public class PropertyImageRepository {
       }
     }
     throw new SQLException("Creation failed");
+  }
+
+  // UPDATE
+
+  public Optional<PropertyImage> update(int id, int property_id, String image_url, boolean is_main, String created_at)
+      throws SQLException {
+    String sql = "UPDATE property_Images SET property_id = ?, image_url = ?, is_main = ?, created_at = ? WHERE id = ?";
+    try (PreparedStatement ps = Database.get().prepareStatement(sql)) {
+      ps.setInt(1, property_id);
+      ps.setString(2, image_url);
+      ps.setInt(3, is_main ? 1 : 0);
+      ps.setString(4, created_at);
+      ps.setInt(5, id);
+      int affected = ps.executeUpdate();
+      if (affected == 0) {
+        return Optional.empty();
+      }
+      return findbyId(id);
+    }
+  }
+
+  // DeLETE
+
+  public boolean delete(int id) throws SQLException {
+    String sql = "DELETE FROM property_Images WHERE id = ?";
+    try (PreparedStatement ps = Database.get().prepareStatement(sql)) {
+      ps.setInt(1, id);
+      return ps.executeUpdate() > 0;
+    }
+  }
+
+  // MAPPING
+
+  public PropertyImage map(ResultSet rs) throws SQLException {
+    return new PropertyImage(
+        rs.getInt("id"),
+        rs.getInt("property_id"),
+        rs.getString("image_url"),
+        rs.getInt("is_main") == 1,
+        rs.getString("created_at"));
   }
 }
