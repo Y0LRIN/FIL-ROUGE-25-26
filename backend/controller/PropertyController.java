@@ -8,6 +8,7 @@ import util.HttpUtils;
 import util.Json;
 import com.sun.net.httpserver.HttpExchange;
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -85,7 +86,7 @@ public class PropertyController {
     HttpUtils.sendJson(ex, 201, Json.toJson(toMap(created)));
   }
 
-  private void update(HttpExchange ex) throws Exception {
+  private void update(HttpExchange ex, int id) throws Exception {
     if (id <= 0) {
       HttpUtils.sendJson(ex, 400, Json.error("Invalid ID"));
       return;
@@ -121,10 +122,10 @@ public class PropertyController {
       HttpUtils.sendJson(ex, 404, Json.error("Property Unknown"));
       return;
     }
-    HttpUtils.sendJson(ex, 200, Json.toJson(toMap(updateed.get)));
+    HttpUtils.sendJson(ex, 200, Json.toJson(toMap(updated.get())));
   }
 
-  private void delete (HttpExchange ex, int id) throws Exception {
+  private void delete(HttpExchange ex, int id) throws Exception {
     if (id <= 0) {
       HttpUtils.sendJson(ex, 400, Json.error("Invalid ID"));
       return;
@@ -133,9 +134,22 @@ public class PropertyController {
       HttpUtils.sendJson(ex, 404, Json.error("Client not found"));
       return;
     }
-    HttpUtils.sendNoContent(ex);Ma
+    HttpUtils.sendNoContent(ex);
   }
 
   private Map<String, Object> toMap(Property p) {
+    Map<String, Object> m = new LinkedHashMap<>();
+    m.put("id", p.id);
+    m.put("title", p.title);
+    m.put("description", p.description);
+    m.put("price", p.price);
+    m.put("surface", p.surface);
+    m.put("rooms", p.rooms);
+    m.put("type", p.type);
+    m.put("status", p.status);
+    m.put("agent_id", p.agent_id);
+    m.put("address_id", p.address_id);
+    m.put("created_at", p.created_at);
+    return m;
   }
 }
