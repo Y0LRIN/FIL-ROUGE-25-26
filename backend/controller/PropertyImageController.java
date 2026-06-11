@@ -94,7 +94,7 @@ public class PropertyImageController {
       HttpUtils.sendJson(ex, 404, Json.error("PropertyImage Unknown"));
       return;
     }
-    HttpUtils.sendJson(ex, 404, Json.toJson(toMap(updated.get())));
+    HttpUtils.sendJson(ex, 200, Json.toJson(toMap(updated.get())));
   }
 
   private void delete(HttpExchange ex, int id) throws Exception {
