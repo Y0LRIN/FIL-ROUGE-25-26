@@ -4,8 +4,6 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Optional;
 
-import jdk.internal.agent.resources.agent;
-
 import java.sql.*;
 
 import model.Property;
@@ -76,7 +74,7 @@ public class PropertyRepository {
       ps.setInt(8, agent_id);
       ps.setInt(9, address_id);
       ps.setString(10, created_at);
-      ps.executeQuery();
+      ps.executeUpdate();
       try (ResultSet keys = ps.getGeneratedKeys()) {
         if (keys.next()) {
           return findbyId(keys.getInt(1)).orElseThrow();
@@ -101,17 +99,17 @@ public class PropertyRepository {
       int address_id,
       String created_at) throws SQLException {
     String sql = """
-        UPDATE clients SET
+        UPDATE properties SET
         title = ?,
         description = ?,
         price = ?,
         surface = ?,
         rooms = ?,
-        type = ?;
+        type = ?,
         status = ?,
         agent_id = ?,
         address_id = ?,
-        created_at = ?,
+        created_at = ?
         WHERE id = ?
         """;
     try (PreparedStatement ps = Database.get().prepareStatement(sql)) {

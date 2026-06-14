@@ -9,19 +9,33 @@ import java.sql.Statement;
 public class Database {
 
   // URL for the database
-  private static final String URL = "";
+  private static final String URL = "jdbc:sqlite:filrouge.db";
 
   private static Connection connection;
 
   // Connection
   public static void init() throws SQLException {
-    connection = DriverManager.getConnection(URL);
-    System.out.println("Database connexion established : " + URL);
+    init(URL);
+  }
+
+  public static void init(String url) throws SQLException {
+    connection = DriverManager.getConnection(url);
+    try (Statement pragma = connection.createStatement()) {
+      pragma.execute("PRAGMA foreign_keys = ON");
+    }
+    System.out.println("Database connexion established : " + url);
     createSchema();
   }
 
   public static Connection get() {
     return connection;
+  }
+
+  public static void close() throws SQLException {
+    if (connection != null && !connection.isClosed()) {
+      connection.close();
+    }
+    connection = null;
   }
 
   // Create tables if they don't exist
@@ -44,7 +58,7 @@ public class Database {
             name        TEXT     NOT NULL,
             email       TEXT     NOT NULL,
             phone       TEXT     NOT NULL,
-            is_admin    INTEGER  NOT NULL  CHECK (is_admin IN (0,1))
+            is_admin    INTEGER  NOT NULL  CHECK (is_admin IN (0,1)),
             created_at  TEXT     NOT NULL  DEFAULT (date('now'))
           )
           """);
@@ -79,7 +93,7 @@ public class Database {
             CREATE TABLE IF NOT EXISTS property_images (
               id           INTEGER  NOT NULL  PRIMARY KEY  AUTOINCREMENT,
               property_id  INTEGER  NOT NULL  REFERENCES properties(id)  ON DELETE CASCADE,
-              images_url   TEXT     NOT NULL,
+              image_url    TEXT     NOT NULL,
               is_main      INTEGER  NOT NULL  CHECK (is_main IN (0,1)),
               created_at   TEXT     NOT NULL  DEFAULT (date('now'))
           )
@@ -112,7 +126,7 @@ public class Database {
               client_id    INTEGER  NOT NULL  REFERENCES clients(id)     ON DELETE CASCADE,
               agent_id     INTEGER  NOT NULL  REFERENCES agents(id)      ON DELETE CASCADE,
               type         TEXT     NOT NULL  CHECK (type IN ('SALE', 'RENTAL')),
-              signed_at    TEXT     NOT NULL  CHECK (visit_date LIKE '____-__-__'),
+              signed_at    TEXT     NOT NULL  CHECK (signed_at LIKE '____-__-__')
           )
           """);
 

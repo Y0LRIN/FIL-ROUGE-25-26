@@ -45,7 +45,7 @@ public class ContractRepository {
       ps.setInt(3, agent_id);
       ps.setString(4, type.name());
       ps.setString(5, signed_at);
-      ps.executeQuery();
+      ps.executeUpdate();
       try (ResultSet keys = ps.getGeneratedKeys()) {
         if (keys.next()) {
           return findbyId(keys.getInt(1)).orElseThrow();
@@ -59,7 +59,7 @@ public class ContractRepository {
 
   public Optional<Contract> update(int id, int property_id, int client_id, int agent_id, ContractType type,
       String signed_at) throws SQLException {
-    String sql = "UPDATE contracts SET property_id = ?, client_id = ?, agent_id = ? type = ?, signed_at = ? WHERE id = ?";
+    String sql = "UPDATE contracts SET property_id = ?, client_id = ?, agent_id = ?, type = ?, signed_at = ? WHERE id = ?";
     try (PreparedStatement ps = Database.get().prepareStatement(sql)) {
       ps.setInt(1, property_id);
       ps.setInt(2, client_id);

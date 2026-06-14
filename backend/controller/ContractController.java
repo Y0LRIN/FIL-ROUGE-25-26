@@ -49,7 +49,7 @@ public class ContractController {
   private void getOne(HttpExchange ex, int id) throws Exception {
     Optional<Contract> contract = repo.findbyId(id);
     if (contract.isEmpty()) {
-      HttpUtils.sendJson(ex, 404, "Unknown Contract");
+      HttpUtils.sendJson(ex, 404, Json.error("Unknown Contract"));
       return;
     }
     HttpUtils.sendJson(ex, 200, Json.toJson(toMap(contract.get())));
@@ -86,7 +86,7 @@ public class ContractController {
     String typeStr = body.get("type");
     String signed_at = body.get("signed_at");
     if (property_idStr == null || client_idStr == null || agent_idStr == null || typeStr == null || signed_at == null) {
-      HttpUtils.sendJson(ex, 400, "All fields required (property_id/client_id/agent_id/type/signed_at)");
+      HttpUtils.sendJson(ex, 400, Json.error("All fields required (property_id/client_id/agent_id/type/signed_at)"));
       return;
     }
     int property_id = Integer.parseInt(property_idStr);
@@ -103,7 +103,7 @@ public class ContractController {
 
   private void delete(HttpExchange ex, int id) throws Exception {
     if (id <= 0) {
-      HttpUtils.sendJson(ex, 200, Json.error("Invalid ID"));
+      HttpUtils.sendJson(ex, 400, Json.error("Invalid ID"));
       return;
     }
     if (!repo.delete(id)) {

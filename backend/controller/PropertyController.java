@@ -50,7 +50,7 @@ public class PropertyController {
   private void getOne(HttpExchange ex, int id) throws Exception {
     Optional<Property> property = repo.findbyId(id);
     if (property.isEmpty()) {
-      HttpUtils.sendJson(ex, 404, "Unknown Client");
+      HttpUtils.sendJson(ex, 404, Json.error("Unknown Property"));
       return;
     }
     HttpUtils.sendJson(ex, 200, Json.toJson(toMap(property.get())));
@@ -131,7 +131,7 @@ public class PropertyController {
       return;
     }
     if (!repo.delete(id)) {
-      HttpUtils.sendJson(ex, 404, Json.error("Client not found"));
+      HttpUtils.sendJson(ex, 404, Json.error("Property not found"));
       return;
     }
     HttpUtils.sendNoContent(ex);

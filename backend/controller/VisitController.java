@@ -49,7 +49,7 @@ public class VisitController {
   private void getOne(HttpExchange ex, int id) throws Exception {
     Optional<Visit> visit = repo.findbyId(id);
     if (visit.isEmpty()) {
-      HttpUtils.sendJson(ex, 404, "Unknown Visit");
+      HttpUtils.sendJson(ex, 404, Json.error("Unknown Visit"));
       return;
     }
     HttpUtils.sendJson(ex, 200, Json.toJson(toMap(visit.get())));
@@ -105,7 +105,7 @@ public class VisitController {
 
   private void delete(HttpExchange ex, int id) throws Exception {
     if (id <= 0) {
-      HttpUtils.sendJson(ex, 200, Json.error("Invalid ID"));
+      HttpUtils.sendJson(ex, 400, Json.error("Invalid ID"));
       return;
     }
     if (!repo.delete(id)) {

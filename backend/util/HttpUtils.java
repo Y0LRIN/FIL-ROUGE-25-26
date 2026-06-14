@@ -19,6 +19,8 @@ public class HttpUtils {
     byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
     ex.getResponseHeaders().set("Content-Type", "application/json; charset=utf-8");
     ex.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+    ex.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    ex.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type, Accept");
     ex.sendResponseHeaders(status, bytes.length);
     try (OutputStream os = ex.getResponseBody()) {
       os.write(bytes);
@@ -27,6 +29,16 @@ public class HttpUtils {
 
   public static void sendNoContent(HttpExchange ex) throws IOException {
     ex.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+    ex.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    ex.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type, Accept");
+    ex.sendResponseHeaders(204, -1);
+    ex.getResponseBody().close();
+  }
+
+  public static void sendOptions(HttpExchange ex) throws IOException {
+    ex.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+    ex.getResponseHeaders().set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    ex.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type, Accept");
     ex.sendResponseHeaders(204, -1);
     ex.getResponseBody().close();
   }

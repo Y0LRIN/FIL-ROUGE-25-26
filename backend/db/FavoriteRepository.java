@@ -22,7 +22,7 @@ public class FavoriteRepository {
   }
 
   public Optional<Favorite> findbyId(int id) throws SQLException {
-    String sql = "SEELCT * FROM favorites WHERE is = ?";
+    String sql = "SELECT * FROM favorites WHERE id = ?";
     try (PreparedStatement ps = Database.get().prepareStatement(sql)) {
       ps.setInt(1, id);
       try (ResultSet rs = ps.executeQuery()) {
@@ -39,7 +39,7 @@ public class FavoriteRepository {
       ps.setInt(1, client_id);
       ps.setInt(2, property_id);
       ps.setString(3, created_at);
-      ps.executeQuery();
+      ps.executeUpdate();
       try (ResultSet keys = ps.getGeneratedKeys()) {
         if (keys.next()) {
           return findbyId(keys.getInt(1)).orElseThrow();

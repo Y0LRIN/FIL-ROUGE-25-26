@@ -56,7 +56,7 @@ public class AgentRepository {
 
   public Optional<Agent> update(int id, String name, String email, String phone, boolean is_admin, String created_at)
       throws SQLException {
-    String sql = "UPDATE agents SET name = ? email = ?, phone = ?, is_admin = ?, created_at = ? WHERE id = ?";
+    String sql = "UPDATE agents SET name = ?, email = ?, phone = ?, is_admin = ?, created_at = ? WHERE id = ?";
     try (PreparedStatement ps = Database.get().prepareStatement(sql)) {
       ps.setString(1, name);
       ps.setString(2, email);

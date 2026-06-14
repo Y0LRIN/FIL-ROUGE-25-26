@@ -52,7 +52,7 @@ public class TransactionController {
   private void getOne(HttpExchange ex, int id) throws Exception {
     Optional<Transaction> transaction = repo.findbyId(id);
     if (transaction.isEmpty()) {
-      HttpUtils.sendJson(ex, 404, "Unknown Transaction");
+      HttpUtils.sendJson(ex, 404, Json.error("Unknown Transaction"));
       return;
     }
     HttpUtils.sendJson(ex, 200, Json.toJson(toMap(transaction.get())));
@@ -67,7 +67,7 @@ public class TransactionController {
     String statusStr = body.get("status");
     if (contract_idStr == null || amounntStr == null || payment_date == null || payment_method == null
         || statusStr == null) {
-      HttpUtils.sendJson(ex, 400, "All fields required (contract_id/amount/payment_date/payment_method/status)");
+      HttpUtils.sendJson(ex, 400, Json.error("All fields required (contract_id/amount/payment_date/payment_method/status)"));
       return;
     }
     int contract_id = Integer.parseInt(contract_idStr);
@@ -98,7 +98,7 @@ public class TransactionController {
     TransactionStatus status = TransactionStatus.valueOf(statusStr);
     Optional<Transaction> updated = repo.update(id, contract_id, amount, payment_date, payment_method, status);
     if (updated.isEmpty()) {
-      HttpUtils.sendJson(ex, 404, "Transaction Unknown");
+      HttpUtils.sendJson(ex, 404, Json.error("Transaction Unknown"));
       return;
     }
     HttpUtils.sendJson(ex, 200, Json.toJson(toMap(updated.get())));
@@ -106,11 +106,11 @@ public class TransactionController {
 
   private void delete(HttpExchange ex, int id) throws Exception {
     if (id <= 0) {
-      HttpUtils.sendJson(ex, 200, Json.error("Invalid ID"));
+      HttpUtils.sendJson(ex, 400, Json.error("Invalid ID"));
       return;
     }
     if (!repo.delete(id)) {
-      HttpUtils.sendJson(ex, 404, "Transaction not found");
+      HttpUtils.sendJson(ex, 404, Json.error("Transaction not found"));
       return;
     }
     HttpUtils.sendNoContent(ex);

@@ -49,7 +49,7 @@ public class ClientController {
   private void getOne(HttpExchange ex, int id) throws Exception {
     Optional<Client> client = repo.findbyId(id);
     if (client.isEmpty()) {
-      HttpUtils.sendJson(ex, 404, "Unknown Client");
+      HttpUtils.sendJson(ex, 404, Json.error("Unknown Client"));
       return;
     }
     HttpUtils.sendJson(ex, 200, Json.toJson(toMap(client.get())));
@@ -84,7 +84,7 @@ public class ClientController {
     String phone = body.get("phone");
     String typeStr = body.get("type");
     if (first_name == null || last_name == null || email == null || phone == null || typeStr == null) {
-      HttpUtils.sendJson(ex, 400, "All fields required (first_name/last_name/email/phone/type)");
+      HttpUtils.sendJson(ex, 400, Json.error("All fields required (first_name/last_name/email/phone/type)"));
       return;
     }
     ClientType type = ClientType.valueOf(typeStr);

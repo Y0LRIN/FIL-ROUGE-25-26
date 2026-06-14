@@ -48,7 +48,7 @@ public class AddressController {
   private void getOne(HttpExchange ex, int id) throws Exception {
     Optional<Address> address = repo.findbyId(id);
     if (address.isEmpty()) {
-      HttpUtils.sendJson(ex, 404, "Unknown address");
+      HttpUtils.sendJson(ex, 404, Json.error("Unknown address"));
       return;
     }
     HttpUtils.sendJson(ex, 200, Json.toJson(toMap(address.get())));
@@ -82,7 +82,7 @@ public class AddressController {
     String country = body.get("country");
 
     if (street == null || city == null || postal_codeStr == null || country == null) {
-      HttpUtils.sendJson(ex, 400, "All fields required(street/city/postal_code/country)");
+      HttpUtils.sendJson(ex, 400, Json.error("All fields required(street/city/postal_code/country)"));
       return;
     }
 

@@ -56,7 +56,7 @@ public class VisitRepository {
       ps.setInt(3, agent_id);
       ps.setString(4, visit_date);
       ps.setString(5, feedback);
-      ps.executeQuery();
+      ps.executeUpdate();
       try (ResultSet keys = ps.getGeneratedKeys()) {
         if (keys.next()) {
           return findbyId(keys.getInt(1)).orElseThrow();
@@ -90,6 +90,7 @@ public class VisitRepository {
       ps.setInt(3, agent_id);
       ps.setString(4, visit_date);
       ps.setString(5, feedback);
+      ps.setInt(6, id);
       int affected = ps.executeUpdate();
       if (affected == 0) {
         return Optional.empty();

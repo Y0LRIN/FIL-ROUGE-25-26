@@ -43,7 +43,7 @@ public class ClientRepository {
       ps.setString(3, email);
       ps.setString(4, phone);
       ps.setString(5, type.name());
-      ps.executeQuery();
+      ps.executeUpdate();
       try (ResultSet keys = ps.getGeneratedKeys()) {
         if (keys.next())
           return findbyId(keys.getInt(1)).orElseThrow();
@@ -56,7 +56,7 @@ public class ClientRepository {
 
   public Optional<Client> update(int id, String first_name, String last_name, String email, String phone,
       ClientType type) throws SQLException {
-    String sql = "UPDATE clients SET first_name = ?, last_name = ?, email = ? phone = ?, type = ? WHERE id = ?";
+    String sql = "UPDATE clients SET first_name = ?, last_name = ?, email = ?, phone = ?, type = ? WHERE id = ?";
     try (PreparedStatement ps = Database.get().prepareStatement(sql)) {
       ps.setString(1, first_name);
       ps.setString(2, last_name);
@@ -75,7 +75,7 @@ public class ClientRepository {
   // DELETE
 
   public boolean delete(int id) throws SQLException {
-    String sql = "DELETE FROM agents WHERE id = ?";
+    String sql = "DELETE FROM clients WHERE id = ?";
     try (PreparedStatement ps = Database.get().prepareStatement(sql)) {
       ps.setInt(1, id);
       return ps.executeUpdate() > 0;

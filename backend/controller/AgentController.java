@@ -31,7 +31,7 @@ public class AgentController {
         case "POST" -> create(ex);
         case "PUT" -> update(ex, id);
         case "DELETE" -> delete(ex, id);
-        default -> HttpUtils.sendJson(ex, 405, "Unknown method");
+        default -> HttpUtils.sendJson(ex, 405, Json.error("Unknown method"));
       }
     } catch (Exception e) {
       HttpUtils.sendJson(ex, 500, Json.error(e.getMessage()));
@@ -49,7 +49,7 @@ public class AgentController {
   private void getOne(HttpExchange ex, int id) throws Exception {
     Optional<Agent> agent = repo.findbyId(id);
     if (agent.isEmpty()) {
-      HttpUtils.sendJson(ex, 404, "Unknown agent");
+      HttpUtils.sendJson(ex, 404, Json.error("Unknown agent"));
       return;
     }
     HttpUtils.sendJson(ex, 200, Json.toJson(toMap(agent.get())));
@@ -85,7 +85,7 @@ public class AgentController {
     String created_at = body.get("created_at");
 
     if (name == null || email == null || phone == null || is_adminStr == null || created_at == null) {
-      HttpUtils.sendJson(ex, 400, "All fields required(name/email/phone/is_admin/created_at)");
+      HttpUtils.sendJson(ex, 400, Json.error("All fields required(name/email/phone/is_admin/created_at)"));
       return;
     }
 
@@ -104,7 +104,7 @@ public class AgentController {
       return;
     }
     if (!repo.delete(id)) {
-      HttpUtils.sendJson(ex, 404, "Agent not found");
+      HttpUtils.sendJson(ex, 404, Json.error("Agent not found"));
       return;
     }
     HttpUtils.sendNoContent(ex);

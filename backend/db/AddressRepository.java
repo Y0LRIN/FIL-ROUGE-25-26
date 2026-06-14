@@ -35,12 +35,13 @@ public class AddressRepository {
   // CREATE
 
   public Address create(String street, String city, int postal_code, String country) throws SQLException {
-    String sql = "INSERT INTO addresses (street, city, postal_code, county) VALUES (?, ?, ?, ?)";
+    String sql = "INSERT INTO addresses (street, city, postal_code, country) VALUES (?, ?, ?, ?)";
     try (PreparedStatement ps = Database.get().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
       ps.setString(1, street);
       ps.setString(2, city);
       ps.setInt(3, postal_code);
       ps.setString(4, country);
+      ps.executeUpdate();
       try (ResultSet keys = ps.getGeneratedKeys()) {
         if (keys.next())
           return findbyId(keys.getInt(1)).orElseThrow();

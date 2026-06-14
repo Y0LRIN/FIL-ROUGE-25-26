@@ -50,7 +50,7 @@ public class PropertyImageController {
   private void getOne(HttpExchange ex, int id) throws Exception {
     Optional<PropertyImage> propertyImage = repo.findbyId(id);
     if (propertyImage.isEmpty()) {
-      HttpUtils.sendJson(ex, 404, "Unknown PropertyImage");
+      HttpUtils.sendJson(ex, 404, Json.error("Unknown PropertyImage"));
       return;
     }
     HttpUtils.sendJson(ex, 200, Json.toJson(toMap(propertyImage.get())));
@@ -83,8 +83,8 @@ public class PropertyImageController {
     String is_mainStr = body.get("is_main");
     String created_at = body.get("created_at");
     String idStr = body.get("id");
-    if (property_idStr == null || image_url == null || is_mainStr == null || created_at == null || idStr == null) {
-      HttpUtils.sendJson(ex, 400, Json.error("All fields required (property_id/image_url/is_main/created_at/id)"));
+    if (property_idStr == null || image_url == null || is_mainStr == null || created_at == null) {
+      HttpUtils.sendJson(ex, 400, Json.error("All fields required (property_id/image_url/is_main/created_at)"));
       return;
     }
     int property_id = Integer.parseInt(property_idStr);
@@ -99,7 +99,7 @@ public class PropertyImageController {
 
   private void delete(HttpExchange ex, int id) throws Exception {
     if (id <= 0) {
-      HttpUtils.sendJson(ex, 200, Json.error("Invalid ID"));
+      HttpUtils.sendJson(ex, 400, Json.error("Invalid ID"));
       return;
     }
     if (!repo.delete(id)) {
@@ -112,7 +112,7 @@ public class PropertyImageController {
   private Map<String, Object> toMap(PropertyImage p) {
     Map<String, Object> m = new LinkedHashMap<>();
     m.put("id", p.id);
-    m.put("property_id", p.id);
+    m.put("property_id", p.property_id);
     m.put("image_url", p.image_url);
     m.put("is_main", p.is_main);
     m.put("created_at", p.created_at);

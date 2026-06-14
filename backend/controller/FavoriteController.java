@@ -48,7 +48,7 @@ public class FavoriteController {
   private void getOne(HttpExchange ex, int id) throws Exception {
     Optional<Favorite> favorite = repo.findbyId(id);
     if (favorite.isEmpty()) {
-      HttpUtils.sendJson(ex, 404, "Unknown Favorite");
+      HttpUtils.sendJson(ex, 404, Json.error("Unknown Favorite"));
       return;
     }
     HttpUtils.sendJson(ex, 200, Json.toJson(toMap(favorite.get())));
@@ -80,7 +80,7 @@ public class FavoriteController {
     String property_idStr = body.get("property_id");
     String created_at = body.get("created_at");
     if (client_idStr == null || property_idStr == null || created_at == null) {
-      HttpUtils.sendJson(ex, 400, "All fields required (client_id/property_id/created_at)");
+      HttpUtils.sendJson(ex, 400, Json.error("All fields required (client_id/property_id/created_at)"));
       return;
     }
     int client_id = Integer.parseInt(client_idStr);
@@ -99,7 +99,7 @@ public class FavoriteController {
       return;
     }
     if (!repo.delete(id)) {
-      HttpUtils.sendJson(ex, 404, "Favorite not found");
+      HttpUtils.sendJson(ex, 404, Json.error("Favorite not found"));
       return;
     }
     HttpUtils.sendNoContent(ex);

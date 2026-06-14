@@ -42,12 +42,12 @@ public class TransactionRepository {
       TransactionStatus status) throws SQLException {
     String sql = """
           INSERT INTO transactions (
-        contract_id,
-        amount,
-        payment_date,
-        payment_method,
-        status
-        )
+            contract_id,
+            amount,
+            payment_date,
+            payment_method,
+            status
+          ) VALUES (?, ?, ?, ?, ?)
         """;
     try (PreparedStatement ps = Database.get().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
       ps.setInt(1, contract_id);
@@ -55,7 +55,7 @@ public class TransactionRepository {
       ps.setString(3, payment_date);
       ps.setString(4, payment_method);
       ps.setString(5, status.name());
-      ps.executeQuery();
+      ps.executeUpdate();
       try (ResultSet keys = ps.getGeneratedKeys()) {
         if (keys.next()) {
           return findbyId(keys.getInt(1)).orElseThrow();
@@ -101,7 +101,7 @@ public class TransactionRepository {
   // DELETE
 
   public boolean delete(int id) throws SQLException {
-    String sql = "DELETE FROM contracts WHERE id = ?";
+    String sql = "DELETE FROM transactions WHERE id = ?";
     try (PreparedStatement ps = Database.get().prepareStatement(sql)) {
       ps.setInt(1, id);
       return ps.executeUpdate() > 0;
