@@ -1,9 +1,12 @@
 package controller;
 
 import db.PropertyRepository;
+import db.AgentRepository;
+import model.Agent;
 import model.enums.PropertyType;
 import model.enums.PropertyStatus;
 import model.Property;
+import util.AuthService;
 import util.HttpUtils;
 import util.Json;
 import com.sun.net.httpserver.HttpExchange;
@@ -57,6 +60,11 @@ public class PropertyController {
   }
 
   private void create(HttpExchange ex) throws Exception {
+    Agent current = authenticateAgent(ex);
+    if (current == null) {
+      return;
+    }
+
     Map<String, String> body = Json.parse(HttpUtils.readBody(ex));
     String title = body.get("title");
     String description = body.get("description");
@@ -69,9 +77,9 @@ public class PropertyController {
     String address_idStr = body.get("address_id");
     String created_at = body.get("created_at");
     if (title == null || description == null || priceStr == null || surfaceStr == null || roomsStr == null
-        || typeStr == null || statusStr == null || agent_idStr == null || address_idStr == null || created_at == null) {
+        || typeStr == null || statusStr == null || address_idStr == null || created_at == null) {
       HttpUtils.sendJson(ex, 400, Json.error(
-          "All fields required (title/description/price/surface/rooms/type/status/agent_id/address_id/created_at)"));
+          "All fields required (title/description/price/surface/rooms/type/status/address_id/created_at)"));
       return;
     }
     int price = Integer.parseInt(priceStr);
@@ -79,7 +87,7 @@ public class PropertyController {
     int rooms = Integer.parseInt(roomsStr);
     PropertyType type = PropertyType.valueOf(typeStr);
     PropertyStatus status = PropertyStatus.valueOf(statusStr);
-    int agent_id = Integer.parseInt(agent_idStr);
+    int agent_id = current.is_admin ? Integer.parseInt(agent_idStr != null ? agent_idStr : String.valueOf(current.id)) : current.id;
     int address_id = Integer.parseInt(address_idStr);
     Property created = repo.create(title, description, price, surface, rooms, type, status, agent_id, address_id,
         created_at);
@@ -92,6 +100,22 @@ public class PropertyController {
       return;
     }
 
+    Agent current = authenticateAgent(ex);
+    if (current == null) {
+      return;
+    }
+
+    Optional<Property> existing = repo.findbyId(id);
+    if (existing.isEmpty()) {
+      HttpUtils.sendJson(ex, 404, Json.error("Property Unknown"));
+      return;
+    }
+    Property existingProperty = existing.get();
+    if (!current.is_admin && existingProperty.agent_id != current.id) {
+      HttpUtils.sendJson(ex, 403, Json.error("Forbidden"));
+      return;
+    }
+
     Map<String, String> body = Json.parse(HttpUtils.readBody(ex));
     String title = body.get("title");
     String description = body.get("description");
@@ -104,9 +128,9 @@ public class PropertyController {
     String address_idStr = body.get("address_id");
     String created_at = body.get("created_at");
     if (title == null || description == null || priceStr == null || surfaceStr == null || roomsStr == null
-        || typeStr == null || statusStr == null || agent_idStr == null || address_idStr == null || created_at == null) {
+        || typeStr == null || statusStr == null || address_idStr == null || created_at == null) {
       HttpUtils.sendJson(ex, 400, Json.error(
-          "All fields required (title/description/price/surface/rooms/type/status/agent_id/address_id/created_at)"));
+          "All fields required (title/description/price/surface/rooms/type/status/address_id/created_at)"));
       return;
     }
     int price = Integer.parseInt(priceStr);
@@ -114,7 +138,7 @@ public class PropertyController {
     int rooms = Integer.parseInt(roomsStr);
     PropertyType type = PropertyType.valueOf(typeStr);
     PropertyStatus status = PropertyStatus.valueOf(statusStr);
-    int agent_id = Integer.parseInt(agent_idStr);
+    int agent_id = current.is_admin ? Integer.parseInt(agent_idStr != null ? agent_idStr : String.valueOf(existingProperty.agent_id)) : existingProperty.agent_id;
     int address_id = Integer.parseInt(address_idStr);
     Optional<Property> updated = repo.update(id, title, description, price, surface, rooms, type, status, agent_id,
         address_id, created_at);
@@ -130,6 +154,21 @@ public class PropertyController {
       HttpUtils.sendJson(ex, 400, Json.error("Invalid ID"));
       return;
     }
+    Agent current = authenticateAgent(ex);
+    if (current == null) {
+      return;
+    }
+
+    Optional<Property> existing = repo.findbyId(id);
+    if (existing.isEmpty()) {
+      HttpUtils.sendJson(ex, 404, Json.error("Property not found"));
+      return;
+    }
+    if (!current.is_admin && existing.get().agent_id != current.id) {
+      HttpUtils.sendJson(ex, 403, Json.error("Forbidden"));
+      return;
+    }
+
     if (!repo.delete(id)) {
       HttpUtils.sendJson(ex, 404, Json.error("Property not found"));
       return;
@@ -151,5 +190,20 @@ public class PropertyController {
     m.put("address_id", p.address_id);
     m.put("created_at", p.created_at);
     return m;
+  }
+
+  private Agent authenticateAgent(HttpExchange ex) throws Exception {
+    String token = HttpUtils.getBearerToken(ex);
+    if (token == null || !AuthService.isTokenValid(token)) {
+      HttpUtils.sendJson(ex, 401, Json.error("Unauthorized"));
+      return null;
+    }
+    int agentId = AuthService.getAgentId(token);
+    Optional<Agent> agent = new AgentRepository().findbyId(agentId);
+    if (agent.isEmpty()) {
+      HttpUtils.sendJson(ex, 401, Json.error("Unauthorized"));
+      return null;
+    }
+    return agent.get();
   }
 }

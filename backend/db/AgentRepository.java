@@ -34,15 +34,16 @@ public class AgentRepository {
 
   // CREATE
 
-  public Agent create(String name, String email, String phone, boolean is_admin, String created_at)
+  public Agent create(String name, String email, String phone, boolean is_admin, String password_hash, String created_at)
       throws SQLException {
-    String sql = "INSERT INTO agents (name, email, phone, is_admin, created_at) VALUES (?, ?, ?, ?, ?)";
+    String sql = "INSERT INTO agents (name, email, phone, is_admin, password_hash, created_at) VALUES (?, ?, ?, ?, ?, ?)";
     try (PreparedStatement ps = Database.get().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
       ps.setString(1, name);
       ps.setString(2, email);
       ps.setString(3, phone);
       ps.setInt(4, is_admin ? 1 : 0);
-      ps.setString(5, created_at);
+      ps.setString(5, password_hash);
+      ps.setString(6, created_at);
       ps.executeUpdate();
       try (ResultSet keys = ps.getGeneratedKeys()) {
         if (keys.next())
@@ -52,24 +53,34 @@ public class AgentRepository {
     throw new SQLException("Creation failed");
   }
 
+  public Agent create(String name, String email, String phone, boolean is_admin, String created_at) throws SQLException {
+    return create(name, email, phone, is_admin, "", created_at);
+  }
+
   // UPDATE
 
-  public Optional<Agent> update(int id, String name, String email, String phone, boolean is_admin, String created_at)
+  public Optional<Agent> update(int id, String name, String email, String phone, boolean is_admin, String password_hash, String created_at)
       throws SQLException {
-    String sql = "UPDATE agents SET name = ?, email = ?, phone = ?, is_admin = ?, created_at = ? WHERE id = ?";
+    String sql = "UPDATE agents SET name = ?, email = ?, phone = ?, is_admin = ?, password_hash = ?, created_at = ? WHERE id = ?";
     try (PreparedStatement ps = Database.get().prepareStatement(sql)) {
       ps.setString(1, name);
       ps.setString(2, email);
       ps.setString(3, phone);
       ps.setInt(4, is_admin ? 1 : 0);
-      ps.setString(5, created_at);
-      ps.setInt(6, id);
+      ps.setString(5, password_hash);
+      ps.setString(6, created_at);
+      ps.setInt(7, id);
       int affected = ps.executeUpdate();
       if (affected == 0) {
         return Optional.empty();
       }
       return findbyId(id);
     }
+  }
+
+  public Optional<Agent> update(int id, String name, String email, String phone, boolean is_admin, String created_at)
+      throws SQLException {
+    return update(id, name, email, phone, is_admin, "", created_at);
   }
 
   // DELETE
@@ -84,6 +95,16 @@ public class AgentRepository {
 
   // MAPPING
 
+  public Optional<Agent> findByEmail(String email) throws SQLException {
+    String sql = "SELECT * FROM agents WHERE email = ?";
+    try (PreparedStatement ps = Database.get().prepareStatement(sql)) {
+      ps.setString(1, email);
+      try (ResultSet rs = ps.executeQuery()) {
+        return rs.next() ? Optional.of(map(rs)) : Optional.empty();
+      }
+    }
+  }
+
   public Agent map(ResultSet rs) throws SQLException {
     return new Agent(
         rs.getInt("id"),
@@ -91,6 +112,7 @@ public class AgentRepository {
         rs.getString("email"),
         rs.getString("phone"),
         rs.getInt("is_admin") == 1,
+        rs.getString("password_hash"),
         rs.getString("created_at"));
   }
 }

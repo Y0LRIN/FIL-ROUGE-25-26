@@ -27,6 +27,22 @@ public class Database {
     createSchema();
   }
 
+  private static void ensureColumnExists(String table, String column, String definition) throws SQLException {
+    try (Statement st = connection.createStatement();
+        java.sql.ResultSet rs = st.executeQuery("PRAGMA table_info(" + table + ")")) {
+      boolean found = false;
+      while (rs.next()) {
+        if (column.equals(rs.getString("name"))) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        st.executeUpdate("ALTER TABLE " + table + " ADD COLUMN " + column + " " + definition);
+      }
+    }
+  }
+
   public static Connection get() {
     return connection;
   }
@@ -54,12 +70,13 @@ public class Database {
 
       st.executeUpdate("""
           CREATE TABLE IF NOT EXISTS agents (
-            id          INTEGER  NOT NULL  PRIMARY KEY  AUTOINCREMENT,
-            name        TEXT     NOT NULL,
-            email       TEXT     NOT NULL,
-            phone       TEXT     NOT NULL,
-            is_admin    INTEGER  NOT NULL  CHECK (is_admin IN (0,1)),
-            created_at  TEXT     NOT NULL  DEFAULT (date('now'))
+            id           INTEGER  NOT NULL  PRIMARY KEY  AUTOINCREMENT,
+            name         TEXT     NOT NULL,
+            email        TEXT     NOT NULL,
+            phone        TEXT     NOT NULL,
+            is_admin     INTEGER  NOT NULL  CHECK (is_admin IN (0,1)),
+            password_hash TEXT    NOT NULL DEFAULT '',
+            created_at   TEXT     NOT NULL  DEFAULT (date('now'))
           )
           """);
 
@@ -98,6 +115,8 @@ public class Database {
               created_at   TEXT     NOT NULL  DEFAULT (date('now'))
           )
           """);
+
+      ensureColumnExists("agents", "password_hash", "TEXT NOT NULL DEFAULT ''");
 
       st.executeUpdate("""
             CREATE TABLE IF NOT EXISTS favorites (

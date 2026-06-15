@@ -3,6 +3,7 @@ import java.net.InetSocketAddress;
 
 import controller.AgentController;
 import controller.AddressController;
+import controller.AuthController;
 import controller.ClientController;
 import controller.ContractController;
 import controller.FavoriteController;
@@ -40,6 +41,8 @@ public class Main {
       c.handle(ex);
     } else if (controller instanceof controller.FavoriteController f) {
       f.handle(ex);
+    } else if (controller instanceof controller.AuthController a) {
+      a.handle(ex);
     } else if (controller instanceof controller.PropertyController p) {
       p.handle(ex);
     } else if (controller instanceof controller.PropertyImageController p) {
@@ -58,6 +61,13 @@ public class Main {
     server.createContext("/api/agents", ex -> {
       try {
         handleRequest(ex, new AgentController());
+      } catch (Exception e) {
+        HttpUtils.sendJson(ex, 500, Json.error(e.getMessage()));
+      }
+    });
+    server.createContext("/api/auth", ex -> {
+      try {
+        handleRequest(ex, new AuthController());
       } catch (Exception e) {
         HttpUtils.sendJson(ex, 500, Json.error(e.getMessage()));
       }
