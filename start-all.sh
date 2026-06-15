@@ -7,8 +7,7 @@ cd "$ROOT"
 if [[ "${1:-}" == "stop" ]]; then
   echo "Stopping backend and frontend..."
   [[ -f "$ROOT/backend.pid" ]] && kill "$(cat "$ROOT/backend.pid")" 2>/dev/null || true
-  [[ -f "$ROOT/frontend.pid" ]] && kill "$(cat "$ROOT/frontend.pid")" 2>/dev/null || true
-  rm -f "$ROOT/backend.pid" "$ROOT/frontend.pid"
+  [[ -f "$ROOT/frontend.pid" ]] && kill "$(cat "$ROOT/frontend.pid")" 2>/dev/null || true  kill_port 8080  rm -f "$ROOT/backend.pid" "$ROOT/frontend.pid"
   echo "Stopped."
   exit 0
 fi
@@ -38,6 +37,18 @@ check_port() {
     fi
   fi
   return 1
+}
+
+kill_port() {
+  local port=$1
+  if ! check_port "$port"; then
+    return
+  fi
+  if command -v lsof >/dev/null 2>&1; then
+    lsof -tiTCP:"$port" -sTCP:LISTEN | xargs -r kill 2>/dev/null || true
+  elif command -v ss >/dev/null 2>&1; then
+    ss -ltnp "sport = :$port" 2>/dev/null | awk '/LISTEN/ {print $NF}' | sed 's#/.*##' | xargs -r kill 2>/dev/null || true
+  fi
 }
 
 if check_port 8080; then

@@ -30,6 +30,17 @@ public class Json {
     return sb.append(']').toString();
   }
 
+  private static String toJsonList(List<?> list) {
+    StringBuilder sb = new StringBuilder("[");
+    for (int i = 0; i < list.size(); i++) {
+      sb.append(value(list.get(i)));
+      if (i < list.size() - 1) {
+        sb.append(',');
+      }
+    }
+    return sb.append(']').toString();
+  }
+
   private static String value(Object v) {
     if (v == null)
       return "null";
@@ -37,6 +48,14 @@ public class Json {
       return v.toString();
     if (v instanceof Boolean)
       return v.toString();
+    if (v instanceof Map) {
+      @SuppressWarnings("unchecked")
+      Map<String, Object> map = (Map<String, Object>) v;
+      return toJson(map);
+    }
+    if (v instanceof List) {
+      return toJsonList((List<?>) v);
+    }
     return '"' + escape(v.toString()) + '"';
   }
 

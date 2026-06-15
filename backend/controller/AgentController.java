@@ -75,19 +75,6 @@ public class AgentController {
   }
 
   private void create(HttpExchange ex) throws Exception {
-    boolean hasAgents = !repo.findAll().isEmpty();
-    Agent current = null;
-    if (hasAgents) {
-      current = authenticateAgent(ex);
-      if (current == null) {
-        return;
-      }
-      if (!current.is_admin) {
-        HttpUtils.sendJson(ex, 403, Json.error("Forbidden"));
-        return;
-      }
-    }
-
     Map<String, String> body = Json.parse(HttpUtils.readBody(ex));
     String name = body.get("name");
     String email = body.get("email");
@@ -102,7 +89,20 @@ public class AgentController {
       HttpUtils.sendJson(ex, 400, Json.error("All fields required (name/email/phone/is_admin/created_at)"));
       return;
     }
+
     boolean is_admin = Boolean.parseBoolean(is_adminStr);
+    boolean hasAgents = !repo.findAll().isEmpty();
+    if (is_admin && hasAgents) {
+      Agent current = authenticateAgent(ex);
+      if (current == null) {
+        return;
+      }
+      if (!current.is_admin) {
+        HttpUtils.sendJson(ex, 403, Json.error("Forbidden"));
+        return;
+      }
+    }
+
     String storedPassword = passwordHash == null || passwordHash.isEmpty() ? "" : PasswordUtils.createStoredPassword(passwordHash);
     Agent created = repo.create(name, email, phone, is_admin, storedPassword, created_at);
     HttpUtils.sendJson(ex, 201, Json.toJson(toMap(created)));

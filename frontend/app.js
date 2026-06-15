@@ -3,6 +3,14 @@ const authLink = document.getElementById('auth-link');
 let currentUser = null;
 let authToken = null;
 let adminEditingPropertyId = null;
+let currentEditingPropertyAddressId = null;
+const FAVORITE_CLIENT_ID = 1;
+
+const API_BASE = window.location.port === '8080'
+  ? window.location.origin
+  : 'http://127.0.0.1:8080';
+
+console.log('Ymmo API_BASE', API_BASE);
 
 const routes = {
   home: renderHome,
@@ -23,7 +31,7 @@ async function hashPassword(password) {
 
 async function loginWithPassword(email, password) {
   const password_hash = await hashPassword(password);
-  const response = await fetch('/api/auth', {
+  const response = await fetch(`${API_BASE}/api/auth`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password_hash }),
@@ -154,7 +162,7 @@ function fetchSearchResults() {
   if (price) query.append('price', price);
   if (city) query.append('city', city);
 
-  fetch(`/api/properties?${query.toString()}`)
+  fetch(`${API_BASE}/api/properties?${query.toString()}`)
     .then((response) => response.ok ? response.json() : Promise.reject(response.status))
     .then(renderListings)
     .catch(() => renderSearchError());
@@ -169,10 +177,13 @@ function renderAnnonce() {
   `;
 
   const propertyId = 1;
-  fetch(`/api/properties/${propertyId}`)
+  fetch(`${API_BASE}/api/properties/${propertyId}`)
     .then((response) => response.ok ? response.json() : Promise.reject())
     .then((property) => {
       document.getElementById('annonce-content').innerHTML = renderPropertyDetail(property);
+      document.getElementById('detail-favorite-button')?.addEventListener('click', () => {
+        addFavorite(property.id);
+      });
     })
     .catch(() => {
       document.getElementById('annonce-content').innerHTML = '<div class="alert">Impossible de charger l\'annonce. Démarrez le backend ou vérifiez l\'identifiant.</div>';
@@ -194,7 +205,7 @@ function renderPropertyDetail(property) {
           <p><strong>Surface :</strong> ${property.surface} m²</p>
           <p><strong>Pièces :</strong> ${property.rooms}</p>
           <p><strong>Statut :</strong> ${property.status}</p>
-          <button class="button button-primary">Ajouter aux favoris</button>
+          ${currentUser ? `<button class="button button-primary" id="detail-favorite-button" data-property-id="${property.id}">Ajouter aux favoris</button>` : ''}
         </div>
       </div>
     </article>
@@ -289,7 +300,7 @@ function renderSignup() {
         created_at: new Date().toISOString().slice(0, 10),
       };
 
-      const response = await fetch('/api/agents', {
+      const response = await fetch(`${API_BASE}/api/agents`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -308,8 +319,13 @@ function renderSignup() {
 function renderFavorites() {
   app.innerHTML = `
     <section class="page-section" aria-labelledby="favorites-title">
-      <h2 id="favorites-title">Favoris</h2>
-      <p>Vos annonces sauvegardées apparaîtront ici.</p>
+      <div class="panel-header">
+        <div>
+          <h2 id="favorites-title">Favoris</h2>
+          <p>Les annonces que vous avez ajoutées aux favoris s’affichent ici.</p>
+        </div>
+      </div>
+      <p id="favorites-message" class="listing-meta"></p>
       <div id="favorites-list"></div>
     </section>
   `;
@@ -319,7 +335,7 @@ function renderFavorites() {
     return;
   }
 
-  document.getElementById('favorites-list').innerHTML = '<div class="card"><p>Aucune annonce favorite pour le moment.</p></div>';
+  fetchFavorites();
 }
 
 function renderAdmin() {
@@ -392,8 +408,24 @@ function renderAdmin() {
               </select>
             </label>
             <label>
-              ID d'adresse
-              <input id="admin-address-field" type="number" placeholder="1" required />
+              Rue
+              <input id="admin-address-street-field" type="text" placeholder="10 Rue Principale" required />
+            </label>
+            <label>
+              Ville
+              <input id="admin-address-city-field" type="text" placeholder="Paris" required />
+            </label>
+            <label>
+              Code postal
+              <input id="admin-address-postal-field" type="text" placeholder="75001" required />
+            </label>
+            <label>
+              Pays
+              <input id="admin-address-country-field" type="text" placeholder="France" required />
+            </label>
+            <label>
+              Images
+              <textarea id="admin-images-field" placeholder="https://... , https://..." rows="2"></textarea>
             </label>
             <div class="form-actions">
               <button type="submit" class="button button-primary">Enregistrer</button>
@@ -434,6 +466,7 @@ function buildPropertyCard(property) {
           <p class="listing-meta">Agent #${property.agent_id}</p>
           <div class="property-actions">
             ${canEdit ? `<button class="button button-secondary" data-edit-id="${property.id}">Modifier</button>` : ''}
+            ${canEdit ? `<button class="button button-secondary" data-delete-id="${property.id}">Supprimer</button>` : ''}
           </div>
         </div>
       </div>
@@ -442,7 +475,7 @@ function buildPropertyCard(property) {
 }
 
 function fetchAdminProperties() {
-  fetch('/api/properties', {
+  fetch(`${API_BASE}/api/properties`, {
     headers: {
       ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
     },
@@ -458,6 +491,9 @@ function fetchAdminProperties() {
       document.querySelectorAll('[data-edit-id]').forEach((button) => {
         button.addEventListener('click', () => openEditProperty(Number(button.dataset.editId), properties));
       });
+      document.querySelectorAll('[data-delete-id]').forEach((button) => {
+        button.addEventListener('click', () => deleteProperty(Number(button.dataset.deleteId)));
+      });
     })
     .catch(() => {
       document.getElementById('admin-property-list').innerHTML = '<div class="alert">Impossible de charger les annonces. Vérifiez le backend.</div>';
@@ -470,6 +506,7 @@ function openEditProperty(id, properties) {
   if (!currentUser.is_admin && property.agent_id !== currentUser.id) return;
 
   adminEditingPropertyId = id;
+  currentEditingPropertyAddressId = property.address_id;
   document.getElementById('admin-title-field').value = property.title;
   document.getElementById('admin-description-field').value = property.description;
   document.getElementById('admin-price-field').value = property.price;
@@ -477,12 +514,30 @@ function openEditProperty(id, properties) {
   document.getElementById('admin-rooms-field').value = property.rooms;
   document.getElementById('admin-type-field').value = property.type;
   document.getElementById('admin-status-field').value = property.status;
-  document.getElementById('admin-address-field').value = property.address_id || 1;
+  document.getElementById('admin-images-field').value = '';
   document.getElementById('admin-message').textContent = 'Modification en cours. Validez pour mettre à jour l\'annonce.';
-}
+
+  if (property.address_id) {
+    fetch(`${API_BASE}/api/addresses/${property.address_id}`)
+      .then((response) => response.ok ? response.json() : Promise.reject())
+      .then((address) => {
+        document.getElementById('admin-address-street-field').value = address.street;
+        document.getElementById('admin-address-city-field').value = address.city;
+        document.getElementById('admin-address-postal-field').value = address.postal_code;
+        document.getElementById('admin-address-country-field').value = address.country;
+      })
+      .catch(() => {
+        document.getElementById('admin-address-street-field').value = '';
+        document.getElementById('admin-address-city-field').value = '';
+        document.getElementById('admin-address-postal-field').value = '';
+        document.getElementById('admin-address-country-field').value = '';
+      });
+    }
+  }
 
 function resetAdminForm() {
   adminEditingPropertyId = null;
+  currentEditingPropertyAddressId = null;
   document.getElementById('admin-create-form').reset();
   document.getElementById('admin-message').textContent = '';
 }
@@ -496,38 +551,80 @@ function handleAdminSubmit(event) {
   const rooms = Number(document.getElementById('admin-rooms-field').value);
   const type = document.getElementById('admin-type-field').value;
   const status = document.getElementById('admin-status-field').value;
-  const address_id = Number(document.getElementById('admin-address-field').value);
+  const street = document.getElementById('admin-address-street-field').value.trim();
+  const city = document.getElementById('admin-address-city-field').value.trim();
+  const postal_code = document.getElementById('admin-address-postal-field').value.trim();
+  const country = document.getElementById('admin-address-country-field').value.trim();
+  const images = document.getElementById('admin-images-field').value
+    .split(',')
+    .map((url) => url.trim())
+    .filter(Boolean);
 
-  if (!title || !description || !price || !surface || !rooms || !type || !status || !address_id) {
+  if (!title || !description || !price || !surface || !rooms || !type || !status || !street || !city || !postal_code || !country) {
     document.getElementById('admin-message').textContent = 'Tous les champs sont obligatoires pour créer ou modifier une annonce.';
     return;
   }
 
-  const payload = {
-    title,
-    description,
-    price,
-    surface,
-    rooms,
-    type,
-    status,
-    agent_id: currentUser.id,
-    address_id,
-    created_at: new Date().toISOString().slice(0, 10),
+  const addressPayload = {
+    street,
+    city,
+    postal_code,
+    country,
   };
 
-  const method = adminEditingPropertyId ? 'PUT' : 'POST';
-  const url = adminEditingPropertyId ? `/api/properties/${adminEditingPropertyId}` : '/api/properties';
+  const addressMethod = currentEditingPropertyAddressId ? 'PUT' : 'POST';
+  const addressUrl = currentEditingPropertyAddressId ? `${API_BASE}/api/addresses/${currentEditingPropertyAddressId}` : `${API_BASE}/api/addresses`;
 
-  fetch(url, {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
-    },
-    body: JSON.stringify(payload),
+  fetch(addressUrl, {
+    method: addressMethod,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(addressPayload),
   })
     .then((response) => response.ok ? response.json() : Promise.reject())
+    .then((address) => {
+      const propertyPayload = {
+        title,
+        description,
+        price,
+        surface,
+        rooms,
+        type,
+        status,
+        agent_id: currentUser.id,
+        address_id: address.id,
+        created_at: new Date().toISOString().slice(0, 10),
+      };
+
+      const method = adminEditingPropertyId ? 'PUT' : 'POST';
+      const url = adminEditingPropertyId ? `${API_BASE}/api/properties/${adminEditingPropertyId}` : `${API_BASE}/api/properties`;
+
+      return fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+        },
+        body: JSON.stringify(propertyPayload),
+      });
+    })
+    .then((response) => response.ok ? response.json() : Promise.reject())
+    .then((property) => {
+      if (images.length) {
+        return Promise.all(images.map((imageUrl, index) =>
+          fetch(`${API_BASE}/api/property_images`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              property_id: property.id,
+              image_url: imageUrl,
+              is_main: index === 0 ? 'true' : 'false',
+              created_at: new Date().toISOString().slice(0, 10),
+            }),
+          })
+        )).then(() => property);
+      }
+      return property;
+    })
     .then(() => {
       document.getElementById('admin-message').textContent = adminEditingPropertyId
         ? 'Annonce mise à jour.'
@@ -570,14 +667,136 @@ function renderListings(properties) {
           <p><strong>Prix :</strong> ${property.price} €</p>
           <p><strong>Surface :</strong> ${property.surface} m²</p>
           <a class="button button-secondary" href="#annonce">Voir</a>
+          ${currentUser ? `<button class="button button-secondary favorite-button" data-property-id="${property.id}">Ajouter aux favoris</button>` : ''}
         </div>
       </div>
     </article>
   `).join('');
+
+  document.querySelectorAll('.favorite-button').forEach((button) => {
+    button.addEventListener('click', () => {
+      addFavorite(Number(button.dataset.propertyId));
+    });
+  });
+}
+
+function addFavorite(propertyId) {
+  return fetch(`${API_BASE}/api/favorites`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      client_id: FAVORITE_CLIENT_ID,
+      property_id: propertyId,
+      created_at: new Date().toISOString().slice(0, 10),
+    }),
+  })
+    .then((response) => {
+      if (!response.ok) {
+        return response.json().then((json) => Promise.reject(json));
+      }
+      return response.json();
+    })
+    .then(() => {
+      const message = document.getElementById('favorites-message');
+      if (message) {
+        message.textContent = 'Annonce ajoutée aux favoris.';
+      }
+    })
+    .catch(() => {
+      const message = document.getElementById('favorites-message');
+      if (message) {
+        message.textContent = 'Impossible d’ajouter ce bien aux favoris.';
+      }
+    });
 }
 
 function renderSearchError() {
   document.getElementById('search-results').innerHTML = '<div class="alert">Impossible de charger les annonces. Vérifiez que le backend fonctionne.</div>';
+}
+
+function fetchFavorites() {
+  fetch(`${API_BASE}/api/favorites`)
+    .then((response) => response.ok ? response.json() : Promise.reject())
+    .then((favorites) => {
+      const list = favorites.filter((favorite) => favorite.client_id === FAVORITE_CLIENT_ID);
+      if (!list.length) {
+        document.getElementById('favorites-list').innerHTML = '<div class="alert">Aucun favori enregistré pour le moment.</div>';
+        return;
+      }
+
+      return Promise.all(list.map((favorite) =>
+        fetch(`${API_BASE}/api/properties/${favorite.property_id}`)
+          .then((response) => response.ok ? response.json() : Promise.reject())
+          .then((property) => ({ property, favoriteId: favorite.id }))
+      ));
+    })
+    .then((items) => {
+      if (!items || !items.length) {
+        return;
+      }
+      document.getElementById('favorites-list').innerHTML = items.map(({ property, favoriteId }) => `
+        <article class="listing" tabindex="0">
+          <img src="https://images.unsplash.com/photo-1560185127-6f8b459c7241?auto=format&fit=crop&w=1200&q=80" alt="Photo du bien ${property.title}" />
+          <div class="listing-body">
+            <div>
+              <h3>${property.title}</h3>
+              <p class="listing-meta">${property.description}</p>
+              <span class="chip">${property.type}</span>
+            </div>
+            <div>
+              <p><strong>Prix :</strong> ${property.price} €</p>
+              <p><strong>Surface :</strong> ${property.surface} m²</p>
+              <button class="button button-secondary favorite-remove-button" data-favorite-id="${favoriteId}">Retirer</button>
+            </div>
+          </div>
+        </article>
+      `).join('');
+
+      document.querySelectorAll('.favorite-remove-button').forEach((button) => {
+        button.addEventListener('click', () => {
+          removeFavorite(Number(button.dataset.favoriteId));
+        });
+      });
+    })
+    .catch(() => {
+      document.getElementById('favorites-list').innerHTML = '<div class="alert">Impossible de charger les favoris.</div>';
+    });
+}
+
+function removeFavorite(favoriteId) {
+  fetch(`${API_BASE}/api/favorites/${favoriteId}`, {
+    method: 'DELETE',
+  })
+    .then((response) => {
+      if (response.ok) {
+        fetchFavorites();
+      }
+    })
+    .catch(() => {
+      const message = document.getElementById('favorites-message');
+      if (message) {
+        message.textContent = 'Impossible de retirer ce favori.';
+      }
+    });
+}
+
+function deleteProperty(propertyId) {
+  fetch(`${API_BASE}/api/properties/${propertyId}`, {
+    method: 'DELETE',
+    headers: {
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+    },
+  })
+    .then((response) => {
+      if (!response.ok) {
+        return Promise.reject();
+      }
+      document.getElementById('admin-message').textContent = 'Annonce supprimée.';
+      fetchAdminProperties();
+    })
+    .catch(() => {
+      document.getElementById('admin-message').textContent = 'Impossible de supprimer l\'annonce.';
+    });
 }
 
 function updateNav() {
